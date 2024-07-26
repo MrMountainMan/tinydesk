@@ -1,0 +1,94 @@
+/* --- main --- */
+.main
+{
+    margin-left: 160px;
+}
+/* --- main end --- */
+
+/* --- sidebar --- */
+.sidenav
+{
+    height: 100%;
+    position: fixed;
+    /*z-index: 0;*/
+    top: 0;
+    left: 0;
+    background-color: #e01515;
+    overflow-x: hidden;
+    padding-top: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    display: inline-grid;
+    grid-auto-rows: min-content;
+    row-gap: 10px;
+}
+
+.sidenav button
+{
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    width: 120px;
+    height: 40px;
+    text-align: center;
+}
+/* --- sidebar end --- */
+
+
+/* --- home --- */
+/* --- home end --- */
+
+/* --- macros --- */
+.macro_page
+{
+    background-color: purple;
+    padding: 0%;
+}
+
+.macro_page h1
+{
+    width: 100%;
+    text-align: center;
+    background-color: blue;
+}
+
+.macro_elements
+{
+    display: grid;
+    gap: 10px 10px;
+    grid-template-columns: repeat(auto-fill, 100px);
+    grid-template-rows: repeat(auto-fill, 100px);
+}
+
+.macro_element
+{
+    max-width: 100px;
+}
+
+.delay_element
+{
+    
+}
+
+.delay_element_input
+{
+    display: inline-flex;
+    max-width: 50px;
+}
+
+.key_element
+{
+    background-color: burlywood;
+}
+
+.add_macro_menu
+{
+    border: 1px solid #cccccc;
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.1);
+    width: 100px;
+}
+/* --- macros end --- */
+
+/* --- more --- */
+
+/* --- more end --- */
