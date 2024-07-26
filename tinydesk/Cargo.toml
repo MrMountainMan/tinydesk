@@ -1,0 +1,17 @@
+[package]
+name = "tinydesk"
+version = "0.1.0"
+authors = ["James Dickson <jamesetpater@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+dioxus = { version = "0.5", features = ["desktop"] }
+rdev = { path = "../../rust_projects/rust_edited_crates/rdev-0.5.3", features = ["serde", "serialize", "unstable_grab"] }
+
+# Debug
+tracing = "0.1.40"
+dioxus-logger = "0.5.0"
+thread-priority = "1.1.0"
