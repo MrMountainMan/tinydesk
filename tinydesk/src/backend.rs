@@ -1,12 +1,96 @@
 use rdev::{grab, windows::grab::stop_grab, listen, simulate, Button, Event, EventType, Key, SimulateError};
 use std::{fs::File, io::{BufWriter, Write}, process::exit};
 
+//put these structs in the enums so you can actually get your data back
+#[derive(Clone, Copy)]
+pub struct KeyData
+{
+    pub key: Key,
+    pub down: bool,
+}
+
+#[derive(Clone, Copy)]
+pub struct ButtonData
+{
+    pub button: Button,
+    pub down: bool,
+}
+
+#[derive(Clone, Copy)]
+pub struct MoveData
+{
+    pub x: f64,
+    pub y: f64
+}
+
+#[derive(Clone, Copy)]
+pub struct DelayData
+{
+    pub hours: i64,
+    pub minutes: i64,
+    pub seconds: i64,
+    pub milliseconds: i64,
+}
+
+
 #[derive(Clone, Copy)]
 pub enum StoredMacroElement {
-    KeyElement{key: char, down: bool},
-    MouseButtonElement{button: i8, down: bool},
-    MouseMoveElement{x: f64, y: f64},
-    DelayElement{hours: i64, minutes: i64, seconds: i64, milliseconds: i64},
+    KeyElement(KeyData),
+    MouseButtonElement(ButtonData),
+    MouseMoveElement(MoveData),
+    DelayElement(DelayData),
+}
+
+//this is used to get the data out of these shitty ass enums
+impl StoredMacroElement
+{
+    fn key_data(self) -> KeyData
+    {
+        if let StoredMacroElement::KeyElement(data) = self
+        {
+            data
+        }
+        else
+        {
+            panic!("Attempting to read KeyData from something which is not a KeyElement")
+        }
+    }
+
+    fn button_data(self) -> ButtonData
+    {
+        if let StoredMacroElement::MouseButtonElement(data) = self
+        {
+            data
+        }
+        else
+        {
+            panic!("Attempting to read ButtonData from something which is not a MouseButtonElement")
+        }
+    }
+
+    fn move_data(self) -> MoveData
+    {
+        if let StoredMacroElement::MouseMoveElement(data) = self
+        {
+            data
+        }
+        else
+        {
+            panic!("Attempting to read MoveData from something which is not a MouseMoveElement")
+        }
+    }
+
+    fn delay_data(self) -> DelayData
+    {
+        if let StoredMacroElement::DelayElement(data) = self
+        {
+            data
+        }
+        else
+        {
+            panic!("Attempting to read DelayData from something which is not a DelayElement") 
+        }
+    }
 }
 
 pub fn play_macro(sequence: Vec<StoredMacroElement>)
@@ -15,11 +99,28 @@ pub fn play_macro(sequence: Vec<StoredMacroElement>)
     {
         match element
         {
-            StoredMacroElement::KeyElement { key: _, down: _ } => println!("a"),
-            _ => println!("somethings gone wrong"),
+            StoredMacroElement::KeyElement(_) => play_key(element),
+            StoredMacroElement::MouseButtonElement(_) => println!("a"),
+            StoredMacroElement::MouseMoveElement(_) => println!("a"),
+            StoredMacroElement::DelayElement(_) => println!("a"),
+            _ => println!("Error: Attempted to play a macro element which is not of a proper type."),
         }
-
     }
+}
+
+fn play_key(keyToPlay: StoredMacroElement)
+{
+    if keyToPlay.key_data().down
+    {
+        send(&EventType::KeyPress(keyToPlay.key_data().key));
+    }
+    else
+    {
+        send(&EventType::KeyRelease(keyToPlay.key_data().key));
+    }
+
+    
+
 }
 
 //use serde::{Serialize, Deserialize};

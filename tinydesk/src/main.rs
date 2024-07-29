@@ -3,6 +3,8 @@
 mod backend;
 use backend::play_macro;
 use backend::StoredMacroElement;
+use backend::{KeyData, ButtonData, MoveData, DelayData};
+
 use std::thread;
 use dioxus::desktop::tao::platform::windows::EventLoopBuilderExtWindows;
 use dioxus::desktop::tao::window;
@@ -11,8 +13,13 @@ use thread_priority::*;
 
 use dioxus::desktop::LogicalSize;
 use dioxus::desktop::WindowBuilder;
+
 use rdev::listen as keylisten;
 use rdev::Event;
+use rdev::Key as MKey;
+
+
+
 use backend::callback2;
 use backend::callback;
 use rdev::grab;
@@ -70,15 +77,13 @@ fn App() -> Element {
     //use_context_provider(|| Signal::new(MacroAddMenuLoc(0f64, 0f64)));
     //let mut shid = use_signal(|| Vec::<StoredMacroElement>::new());
 
-    let thing1 = StoredMacroElement::KeyElement{key: 'a', down: true};
-    let thing2 = StoredMacroElement::KeyElement{key: 'b', down: false};
-    let thing3 = StoredMacroElement::KeyElement{key: 'c', down: false};
+    let thing1 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: true});
+    let thing2 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: false});
 
     unsafe
     {
         storedMacro.push(thing1);
         storedMacro.push(thing2);
-        storedMacro.push(thing3);
 
         play_macro(storedMacro.clone());
     }
