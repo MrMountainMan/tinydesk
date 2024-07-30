@@ -9,9 +9,20 @@ edition = "2021"
 [dependencies]
 
 dioxus = { version = "0.5", features = ["desktop"] }
-rdev = { path = "../../rust_projects/rust_edited_crates/rdev-0.5.3", features = ["serde", "serialize", "unstable_grab"] }
+futures = "0.3.30"
 
 # Debug
 tracing = "0.1.40"
 dioxus-logger = "0.5.0"
 thread-priority = "1.1.0"
+
+[dependencies.windows]
+version = "0.58.0"
+features = [
+    "Data_Xml_Dom",
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+]

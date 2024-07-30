@@ -1,290 +1,141 @@
-use rdev::{grab, windows::grab::stop_grab, listen, simulate, Button, Event, EventType, Key, SimulateError};
-use std::{fs::File, io::{BufWriter, Write}, process::exit};
+use std::{mem::size_of, ptr::null_mut};
 
-//put these structs in the enums so you can actually get your data back
-#[derive(Clone, Copy)]
-pub struct KeyData
-{
-    pub key: Key,
-    pub down: bool,
-}
-
-#[derive(Clone, Copy)]
-pub struct ButtonData
-{
-    pub button: Button,
-    pub down: bool,
-}
-
-#[derive(Clone, Copy)]
-pub struct MoveData
-{
-    pub x: f64,
-    pub y: f64
-}
-
-#[derive(Clone, Copy)]
-pub struct DelayData
-{
-    pub hours: i64,
-    pub minutes: i64,
-    pub seconds: i64,
-    pub milliseconds: i64,
-}
-
-
-#[derive(Clone, Copy)]
-pub enum StoredMacroElement {
-    KeyElement(KeyData),
-    MouseButtonElement(ButtonData),
-    MouseMoveElement(MoveData),
-    DelayElement(DelayData),
-}
-
-//this is used to get the data out of these shitty ass enums
-impl StoredMacroElement
-{
-    fn key_data(self) -> KeyData
-    {
-        if let StoredMacroElement::KeyElement(data) = self
-        {
-            data
-        }
-        else
-        {
-            panic!("Attempting to read KeyData from something which is not a KeyElement")
-        }
+use windows::{core::Error, Win32::
+    {Foundation::{GetLastError, LPARAM, LRESULT, WIN32_ERROR, WPARAM},
+    UI::{
+        Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, KEYEVENTF_UNICODE, VIRTUAL_KEY, VK_SPACE},
+        WindowsAndMessaging::{CallNextHookEx, GetMessageA, PeekMessageA, SetWindowsHookExA, HHOOK, HOOKPROC, KBDLLHOOKSTRUCT, MSG, PEEK_MESSAGE_REMOVE_TYPE, PM_NOREMOVE, PM_REMOVE, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_SYSKEYDOWN, WM_SYSKEYUP}
     }
+}};
 
-    fn button_data(self) -> ButtonData
-    {
-        if let StoredMacroElement::MouseButtonElement(data) = self
-        {
-            data
-        }
-        else
-        {
-            panic!("Attempting to read ButtonData from something which is not a MouseButtonElement")
-        }
-    }
+enum MacroElementDataType
+{
+    Key,
+    Button,
+    Mouse,
+    Delay,
+}
 
-    fn move_data(self) -> MoveData
-    {
-        if let StoredMacroElement::MouseMoveElement(data) = self
-        {
-            data
-        }
-        else
-        {
-            panic!("Attempting to read MoveData from something which is not a MouseMoveElement")
-        }
-    }
+union MacroElementData
+{
+    key: (VIRTUAL_KEY, bool),
+    button: (VIRTUAL_KEY, bool),
+    mouse: (f64, f64),
+    delay: (i64, i64, i64, i64),
+}
 
-    fn delay_data(self) -> DelayData
+struct MacroElement
+{
+    data: MacroElementData,
+    r#type: MacroElementDataType,
+}
+
+
+//static mut KEYBOARD_HOOK: Option<Result<HHOOK, Error>> = None;
+
+fn main() {
+    println!("Hello, world!");
+    unsafe 
     {
-        if let StoredMacroElement::DelayElement(data) = self
-        {
-            data
-        }
-        else
-        {
-            panic!("Attempting to read DelayData from something which is not a DelayElement") 
-        }
+        do_stuff();
     }
 }
 
-pub fn play_macro(sequence: Vec<StoredMacroElement>)
+unsafe fn play_macro(sequence: &[MacroElement])
 {
     for element in sequence
     {
-        match element
+        match element.r#type
         {
-            StoredMacroElement::KeyElement(_) => play_key(element),
-            StoredMacroElement::MouseButtonElement(_) => println!("a"),
-            StoredMacroElement::MouseMoveElement(_) => println!("a"),
-            StoredMacroElement::DelayElement(_) => println!("a"),
-            _ => println!("Error: Attempted to play a macro element which is not of a proper type."),
+            MacroElementDataType::Key => send_key(element.data.key.0, element.data.key.1),
+            MacroElementDataType::Button => println!("matched with button"), 
+            MacroElementDataType::Mouse => println!("matched with mouse"), 
+            MacroElementDataType::Delay => println!("matched with delay"), 
+            _ => println!("very bad")
         }
     }
 }
 
-fn play_key(keyToPlay: StoredMacroElement)
-{
-    if keyToPlay.key_data().down
+unsafe fn do_stuff()
+{   
+    //let hook_procedure: HOOKPROC;
+
+    //create hooks
+    //KEYBOARD_HOOK = Some(SetWindowsHookExA(WH_KEYBOARD_LL, Some(hook_callback), None , 0));
+    let keyboard_hook = SetWindowsHookExA(WH_KEYBOARD_LL, Some(hook_callback), None , 0);
+    let mouse_hook = SetWindowsHookExA(WH_MOUSE_LL, Some(hook_callback), None , 0);
+
+    //let hook_struct = KBDLLHOOKSTRUCT {vkCode: 41, }
+
+    let mut message: MSG = Default::default();
+    let msg_ptr: *mut MSG = &mut message;
+
+    while GetMessageA(msg_ptr, None, 0, 0).into()
     {
-        send(&EventType::KeyPress(keyToPlay.key_data().key));
-    }
-    else
-    {
-        send(&EventType::KeyRelease(keyToPlay.key_data().key));
-    }
-
-    
-
-}
-
-//use serde::{Serialize, Deserialize};
-
-/*
-#[derive(Deserialize, Serialize)]
-struct SequenceElement
-{
-    key : Option<Key>,
-    button : Option<Button>,
-    delay : Option<i64>,
-}
-
-pub fn write_to_json(macro_to_write : Vec<SequenceElement> )
-{
-    let file = File::create("macros.json").unwrap(); 
-    let mut writer = BufWriter::new(&file);
-    let _ = serde_json::to_writer_pretty(&mut writer, &macro_to_write);
-    let _ = writer.flush();
-
-}*/
-
-/*
-fn useful(){
-
-    //AppData::run(Settings::default());
-
-    /*
-    let main_window = WindowDesc::new(ui_builder()).title("Test Window");
-    AppLauncher::with_window(main_window)
-        .log_to_console()
-        .launch(AppData{num: 3})
-        .unwrap();
-    */
-
-    let mut vec : Vec<SequenceElement> = Vec::new();
-
-    let one = SequenceElement   
-    {
-        key: Some(Key::KeyA),
-        button: None,
-        delay: None,
-    };
-
-    let two = SequenceElement   
-    {
-        key: None,
-        button: Some(Button::Right),
-        delay: None,
-    };
-
-    let three = SequenceElement   
-    {
-        key: None,
-        button: None,
-        delay: Some(10),
-    };
-
-    vec.push(one);
-    vec.push(two);
-    vec.push(three);
-
-    write_to_json(vec);
-
-    /* if let Err(error) = listen(callback) {
-        println!("Error: {:?}", error)
-    } */
-
-    /*
-    if let Err(error) = grab(callback2) {
-        println!("Error: {:?}", error)
-    }*/
-
-    //stop_grab();
-    
-    /*
-    if let Err(error) = listen(callback) {
-        println!("Error: {:?}", error)
-    }*/
-
-}*/
-
-fn send(event_type: &EventType) {
-    match simulate(event_type) {
-        Ok(()) => (),
-        Err(SimulateError) => {
-            println!("could not send event: {:?}", event_type);
-        }
-    }
-    //let delay = time::Duration::from_millis(20);
-    //thread::sleep(delay);
-}
-
-/*
-fn read_from_json() -> Vec<SequenceElement>
-{
-    let mut to_return : Vec<SequenceElement> = Vec::new();
-
-    return to_return;
-}*/
-
-fn complete_apple ()
-{
-    send(&EventType::KeyPress(Key::KeyP));
-    send(&EventType::KeyRelease(Key::KeyP));
-
-    send(&EventType::KeyPress(Key::KeyP));
-    send(&EventType::KeyRelease(Key::KeyP));
-
-    send(&EventType::KeyPress(Key::KeyL));
-    send(&EventType::KeyRelease(Key::KeyL));
-
-    send(&EventType::KeyPress(Key::KeyE));
-    send(&EventType::KeyRelease(Key::KeyE));
-
-}
-
-pub fn callback(event: Event)
-{
-    //println!("My callback {:?}", event);
-
-    match event.event_type
-    {
-        EventType::ButtonPress(Button::Left) =>
-        {
-            println!("lmb pressed");
-        },
-        EventType::KeyPress(Key::KeyZ) => exit(0),
-        EventType::KeyPress(Key::KeyP) => stop_grab(),
-        EventType::KeyRelease(Key::KeyA) => complete_apple(),
-        _ => 
-        {
-            println!("other event");
-        },
+        let _ = PeekMessageA(msg_ptr, None, 0, 0, PM_REMOVE);
     }
 
 }
 
-pub fn callback2(event : Event) -> Option<Event>
-{
-    match event.event_type
+
+unsafe extern "system" fn hook_callback(n_code: i32, w_param: WPARAM, l_param: LPARAM) -> LRESULT
+{   
+    //CallNextHookEx(hook, n_code, w_param, l_param)
+    //println!("doing something i think");
+
+    let key_down: usize = usize::try_from(WM_KEYDOWN).unwrap();
+    let sys_key_down: usize = usize::try_from(WM_SYSKEYDOWN).unwrap();
+    let sys_key_up: usize = usize::try_from(WM_SYSKEYUP).unwrap();
+    let key_up: usize = usize::try_from(WM_KEYUP).unwrap();
+    //let l_button_down: usize = usize::try_from(WM_LBUTTONDOWN).unwrap();
+
+    let l_button_down: usize = WM_LBUTTONDOWN as usize;
+
+    if w_param == WPARAM(key_down)
     {
-        EventType::ButtonPress(Button::Left) =>
-        {
-            println!("lmb pressed");
-            Some(event)
-        },
-        EventType::KeyPress(Key::KeyZ) => exit(0),
-        EventType::KeyPress(Key::KeyP) => 
-        {
-            stop_grab();
-            Some(event)
-        },
-        EventType::KeyPress(Key::KeyL) =>
-        {
-            println!("eating the L press yum yum");
-            None
-        },
-        //EventType::KeyRelease(Key::KeyA) => complete_apple(),
-        //EventType::KeyPress(Key::KeyB) => return(Event);
-        _ => 
-        {
-            //println!("other event");
-            Some(event)
-        },
+        println!("key pressed down");
     }
+    else if w_param == WPARAM(sys_key_down)
+    {
+        println!("sys key pressed");
+    }
+    else if w_param == WPARAM(sys_key_up)
+    {
+        println!("sys key released");
+    }
+    else if w_param == WPARAM(key_up)
+    {
+        println!("key released");
+    }
+    else if w_param == WPARAM(l_button_down)
+    {
+        println!("lmb pressed");
+    }
+
+    //CallNextHookEx(hook_reference, n_code, w_param, l_param)
+    LRESULT(0)
+}
+
+unsafe fn send_key(key: VIRTUAL_KEY, press: bool)
+{
+    let mut input: INPUT =
+        INPUT { 
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 { 
+                ki: KEYBDINPUT { 
+                    wVk: key, 
+                    wScan: 0u16, 
+                    dwFlags: KEYBD_EVENT_FLAGS::default(), 
+                    time: 0, 
+                    dwExtraInfo: usize::default(),
+                }
+            }
+        };
+
+    if !press
+    {
+        input.Anonymous.ki.dwFlags = KEYBD_EVENT_FLAGS::default() | KEYEVENTF_KEYUP;
+    }
+
+    SendInput(&vec!{input}, size_of::<INPUT>() as _);
 }

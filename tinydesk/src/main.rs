@@ -1,31 +1,19 @@
 #![allow(non_snake_case)]
 
+use std::time;
+
 mod backend;
-use backend::play_macro;
-use backend::StoredMacroElement;
-use backend::{KeyData, ButtonData, MoveData, DelayData};
+//use backend::play_macro;
+//use backend::StoredMacroElement;
+//use backend::{KeyData, ButtonData, MoveData, DelayData};
 
 use std::thread;
-use dioxus::desktop::tao::platform::windows::EventLoopBuilderExtWindows;
-use dioxus::desktop::tao::window;
-use dioxus::desktop::window;
-use thread_priority::*;
+use std::thread::sleep;
 
 use dioxus::desktop::LogicalSize;
 use dioxus::desktop::WindowBuilder;
-
-use rdev::listen as keylisten;
-use rdev::Event;
-use rdev::Key as MKey;
-
-
-
-use backend::callback2;
-use backend::callback;
-use rdev::grab;
-//use backend::callback2;
-
 use dioxus::prelude::*;
+
 use tracing::Level;
 
 use dioxus::prelude::Key::Character;
@@ -64,36 +52,18 @@ fn CreateWindow() -> WindowBuilder
 #[derive(Clone, Copy)]
 struct ContentId(i8);
 
-struct StoredMacros(
-    Vec<StoredMacroElement>
-);
-
-
-static mut storedMacro : Vec<StoredMacroElement> = Vec::<StoredMacroElement>::new();
-
 #[component]
 fn App() -> Element {
     
     //use_context_provider(|| Signal::new(MacroAddMenuLoc(0f64, 0f64)));
     //let mut shid = use_signal(|| Vec::<StoredMacroElement>::new());
 
-    let thing1 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: true});
-    let thing2 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: false});
+    //let thing1 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: true});
+   // let thing2 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyA, down: false});
 
-    unsafe
-    {
-        storedMacro.push(thing1);
-        storedMacro.push(thing2);
-
-        play_macro(storedMacro.clone());
-    }
-    
-
-    //shid.write().push(thing1);
-    //shid.write().push(thing2);
-    //shid.write().push(thing3);
-
-    
+    //let thing3 = StoredMacroElement::DelayElement(DelayData{hours: 0, minutes: 0, seconds: 4, milliseconds: 0});
+    //let thing4 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyB, down: true});
+    //let thing5 = StoredMacroElement::KeyElement(KeyData{key: MKey::KeyB, down: false});
 
     let content_id = use_signal(|| ContentId(1));
 
@@ -166,7 +136,6 @@ fn Macros() -> Element
             br {}
             "this is the macros page"
             br {}
-            button { onclick: |_| DoThing(), "begin listen" }
         }
     }
 
@@ -283,15 +252,6 @@ fn MacroKey() -> Element
         }
     }
 
-}
-
-fn DoThing()
-{
-    thread::spawn( move || {
-        if let Err(error) = grab(callback2) {
-            println!("Error: {:?}", error)
-        }
-    });
 }
 
 fn MacroMacro() -> Element
